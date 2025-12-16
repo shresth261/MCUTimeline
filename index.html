@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCU Timeline - Marvel Database</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto+Condensed:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --marvel-red: #E62429;
+            --marvel-gold: #F59E0B;
+            --bg-dark: #030712;
+            --bg-panel: #111827; /* gray-900 equivalent */
+            --bg-panel-transparent: rgba(17, 24, 39, 0.95);
+            --text-white: #ffffff;
+            --text-gray: #9CA3AF;
+            --border-dim: rgba(230, 36, 41, 0.3);
+            
+            --font-head: 'Oswald', sans-serif;
+            --font-body: 'Roboto Condensed', sans-serif;
+            --font-data: 'Roboto Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-white);
+            font-family: var(--font-body);
+            margin: 0;
+            overflow-x: hidden;
+            line-height: 1.5;
+        }
+
+        /* --- Utilities --- */
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .text-center { text-align: center; }
+        .uppercase { text-transform: uppercase; }
+        .w-full { width: 100%; }
+        .relative { position: relative; }
+        .absolute { position: absolute; }
+        .fixed { position: fixed; }
+        .pointer-events-none { pointer-events: none; }
+        
+        /* --- Typography --- */
+        h1, h2, h3 { font-family: var(--font-head); font-weight: 700; margin: 0; letter-spacing: 0.05em; }
+        .text-red { color: var(--marvel-red); }
+        .text-gold { color: var(--marvel-gold); }
+        .text-white { color: var(--text-white); }
+        .font-data { font-family: var(--font-data); }
+        
+        /* --- Animations --- */
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.3; }
+        }
+        .animate-pulse { animation: pulse-slow 2s infinite cubic-bezier(0.4, 0, 0.6, 1); }
+        
+        .transition-all { transition: all 0.3s ease-in-out; }
+        .data-transition { transition: opacity 0.3s ease, filter 0.3s ease; }
+        .data-transition-active { opacity: 0.1; filter: blur(5px); }
+        
+        /* New Landing Page Animation */
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Scrollbar --- */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-panel); }
+        ::-webkit-scrollbar-thumb { background: var(--marvel-red); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #b91c1c; }
+
+        /* --- Layout Components --- */
+        
+        /* Background Canvas */
+        #starfield {
+            position: fixed; inset: 0; z-index: -10; pointer-events: none;
+        }
+
+        /* Header */
+        header {
+            position: sticky; top: 0; z-index: 50;
+            padding: 1rem;
+            background-color: rgba(17, 24, 39, 0.9); /* backdrop blur fallback */
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(230, 36, 41, 0.2);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            /* Ensure header is always visible */
+            opacity: 1; 
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .header-content {
+            max-width: 80rem; margin: 0 auto;
+            display: flex; align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 1.875rem; /* 3xl */
+            cursor: pointer;
+            /* margin-right: auto; REMOVED to allow nav-container to handle pushing */
+            color: var(--marvel-red);
+            letter-spacing: 0.1em;
+        }
+        .logo span { color: var(--text-white); }
+
+        /* Navigation Buttons */
+        .nav-container {
+            display: flex; align-items: center; gap: 1rem;
+            margin-left: auto; /* Pushes navigation to the right */
+        }
+        .auth-container {
+            display: flex; align-items: center; gap: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content { flex-direction: column; }
+            .nav-container { margin-left: 0; gap: 0.5rem; } /* Reset for mobile */
+        }
+
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px; /* rounded-full */
+            font-size: 0.875rem;
+            font-weight: 600;
+            font-family: var(--font-head);
+            display: flex; align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+            text-transform: uppercase;
+            background: transparent;
+        }
+
+        .nav-btn i { width: 1rem; height: 1rem; margin-right: 0.5rem; }
+
+        .nav-btn.active {
+            background-color: var(--marvel-red);
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(220, 38, 38, 0.3);
+        }
+
+        .nav-btn.inactive {
+            color: var(--marvel-red);
+            border-color: rgba(230, 36, 41, 0.5);
+        }
+        .nav-btn.inactive:hover {
+            background-color: rgba(31, 41, 55, 0.5);
+            color: white;
+        }
+
+        /* Auth Status */
+        .user-badge {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background-color: var(--bg-panel);
+            border-radius: 9999px;
+            border: 1px solid var(--marvel-red);
+        }
+        .status-dot { width: 0.5rem; height: 0.5rem; background-color: #22c55e; border-radius: 50%; animation: pulse-slow 2s infinite; }
+        .user-id { font-size: 0.75rem; font-family: var(--font-data); color: var(--marvel-gold); }
+
+        .logout-btn { color: var(--marvel-red); background: none; border: none; cursor: pointer; padding: 0.5rem; border-radius: 50%; transition: 0.2s; }
+        .logout-btn:hover { background-color: var(--bg-panel); color: white; }
+
+        .login-btn {
+            padding: 0.5rem 1.25rem;
+            background-color: rgba(127, 29, 29, 0.3);
+            border: 1px solid rgba(220, 38, 38, 0.5);
+            color: var(--marvel-red);
+            font-size: 0.875rem;
+            font-family: var(--font-head);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            border-radius: 0.25rem;
+            transition: all 0.3s;
+        }
+        .login-btn:hover { background-color: var(--marvel-red); color: white; }
+
+        /* --- Timeline View --- */
+        .view-container { padding: 2rem; }
+        .timeline-controls {
+            max-width: 56rem; margin: 0 auto 2rem auto;
+            background-color: var(--bg-panel);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(230, 36, 41, 0.3);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 1rem;
+        }
+        .timeline-title { font-size: 1.25rem; color: var(--marvel-red); }
+        .filter-active-text { color: var(--marvel-gold); }
+        
+        .mode-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            font-family: var(--font-head);
+            text-transform: uppercase;
+            display: flex; align-items: center; gap: 0.5rem;
+            cursor: pointer;
+            transition: 0.3s;
+            border: none;
+        }
+        .mode-btn.active { background-color: var(--marvel-red); color: white; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.3); }
+        .mode-btn.inactive { background-color: #1f2937; color: var(--marvel-red); }
+        .mode-btn.inactive:hover { background-color: #374151; }
+
+        /* Timeline Line & Nodes */
+        .timeline-wrapper { position: relative; max-width: 42rem; margin: 0 auto; }
+        .timeline-line {
+            position: absolute; left: 0; width: 4px; height: 100%;
+            transform: translateX(46px); border-radius: 9999px;
+            background-color: var(--marvel-red);
+        }
+        .timeline-line.filtered { background-color: var(--marvel-gold); }
+
+        .timeline-cards-container { padding-left: 4rem; display: flex; flex-direction: column; gap: 2rem; }
+
+        /* Content Card */
+        .content-card {
+            position: relative;
+            padding: 1rem;
+            background-color: var(--bg-panel);
+            border-radius: 0.75rem;
+            border: 1px solid rgba(230, 36, 41, 0.3);
+            transition: all 0.3s ease-out;
+            box-shadow: 0 0 15px rgba(230, 36, 41, 0.1);
+            cursor: pointer; /* Indicating it's clickable */
+        }
+        .content-card:hover { transform: scale(1.03); box-shadow: 0 0 25px rgba(230, 36, 41, 0.3); }
+        
+        .content-card.filtered {
+            border-color: rgba(245, 158, 11, 0.7);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+        }
+
+        .timeline-node {
+            position: absolute; left: -3rem; top: 50%; transform: translateY(-50%);
+            width: 1rem; height: 1rem; border-radius: 50%;
+            background-color: var(--marvel-red);
+            box-shadow: 0 0 0 4px rgba(17, 24, 39, 1), 0 0 0 6px rgba(230, 36, 41, 0.5);
+            transition: 0.3s;
+        }
+        .content-card:hover .timeline-node { background-color: white; }
+        .content-card.filtered .timeline-node { background-color: var(--marvel-gold); box-shadow: 0 0 0 4px rgba(17, 24, 39, 1), 0 0 0 6px rgba(245, 158, 11, 0.5); }
+
+        /* UPDATED: Increased gap to shift data right */
+        .card-inner { display: flex; gap: 2rem; }
+        
+        /* UPDATED: Increased poster size */
+        .poster-img {
+            width: 7.5rem; height: 11rem; /* Increased size */
+            object-fit: cover; border-radius: 0.375rem;
+            border: 1px solid rgba(230, 36, 41, 0.4);
+            flex-shrink: 0; /* Prevents image from squishing */
+        }
+        
+        .card-details { flex-grow: 1; display: flex; flex-direction: column; }
+        .card-title { font-size: 1.125rem; color: white; margin-bottom: 0.25rem; font-family: var(--font-head); letter-spacing: 0.05em; }
+        .content-card.filtered .card-title { color: var(--marvel-gold); }
+        .card-meta { font-size: 0.875rem; color: #f87171; font-family: var(--font-data); margin-bottom: 0.5rem; }
+        .card-synopsis { font-size: 0.875rem; color: var(--text-gray); font-style: italic; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; } /* Increased line-clamp to fill height */
+
+        /* Watch Button */
+        .watch-btn {
+            margin-top: 0.75rem;
+            display: inline-flex; align-items: center; gap: 0.25rem;
+            padding: 0.5rem; border-radius: 0.5rem;
+            font-size: 0.75rem; font-weight: 600;
+            background: transparent; border: 1px solid currentColor;
+            cursor: pointer; transition: 0.3s;
+            font-family: var(--font-head); letter-spacing: 0.05em;
+        }
+        .watch-btn:hover { background-color: rgba(31, 41, 55, 0.8); }
+        
+        .status-none { color: var(--text-gray); }
+        .status-plan { color: var(--marvel-red); }
+        .status-watching { color: var(--marvel-gold); }
+        .status-watched { color: #22c55e; }
+
+        /* --- Character Grid --- */
+        .character-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;
+        }
+        @media (min-width: 640px) { .character-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 1024px) { .character-grid { grid-template-columns: repeat(4, 1fr); } }
+
+        .char-card {
+            background-color: var(--bg-panel);
+            border-radius: 0.75rem;
+            border: 2px solid rgba(230, 36, 41, 0.2);
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .char-card:hover { border-color: var(--marvel-red); box-shadow: 0 10px 15px -3px rgba(220, 38, 38, 0.2); transform: translateY(-2px); }
+        .char-card.active { border-color: var(--marvel-gold); box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.4); transform: scale(1.05); }
+
+        .char-img {
+            width: 100%; height: 12rem; /* h-48 */
+            object-fit: cover; object-position: top;
+            border-radius: 0.375rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid rgba(230, 36, 41, 0.5);
+        }
+        .char-card.active .char-img { border-color: var(--marvel-gold); }
+
+        .char-name { font-size: 1.25rem; color: white; transition: 0.3s; }
+        .char-card:hover .char-name { color: var(--marvel-red); }
+        .char-card.active .char-name { color: var(--marvel-gold); }
+
+        .char-origin { font-size: 0.875rem; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .char-stats { font-size: 0.75rem; font-family: var(--font-data); color: #f87171; margin-top: 0.5rem; }
+
+        /* --- Profile/Watchlist View --- */
+        .profile-container { max-width: 56rem; margin: 0 auto; padding: 2rem; }
+        .profile-header { border-bottom: 1px solid rgba(230, 36, 41, 0.5); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        .profile-title { font-size: 1.875rem; color: var(--marvel-red); }
+        .profile-meta { font-size: 0.875rem; font-family: var(--font-data); color: var(--text-gray); }
+        .profile-item {
+            padding: 1rem; 
+            background-color: var(--bg-panel);
+            border-radius: 0.5rem; 
+            border: 1px solid rgba(230, 36, 41, 0.3);
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        /* UPDATED PROFILE IMAGE SIZE AND MARGIN */
+        .profile-item-img {
+            width: 4.5rem; /* Increased size: approx 72px */ 
+            height: 6.5rem;  /* Increased size: approx 104px */
+            object-fit: cover; 
+            border-radius: 0.125rem; 
+            border: 1px solid rgba(230, 36, 41, 0.3);
+            flex-shrink: 0;
+            margin-right: 1.5rem; /* Increased margin for separation */
+        }
+        .profile-item-details {
+            display: flex; 
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        /* --- Modals --- */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            opacity: 0; pointer-events: none; transition: opacity 0.2s;
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+
+        /* Auth Modal Specifics */
+        .auth-box {
+            background-color: var(--bg-panel);
+            border: 1px solid rgba(230, 36, 41, 0.5);
+            padding: 2rem; border-radius: 0.75rem;
+            width: 100%; max-width: 28rem;
+            box-shadow: 0 25px 50px -12px rgba(220, 38, 38, 0.2);
+            position: relative; overflow: hidden;
+        }
+        .corner-deco {
+            position: absolute; width: 2rem; height: 2rem;
+            border-color: var(--marvel-red); border-style: solid;
+        }
+        .tl { top: 0; left: 0; border-width: 2px 0 0 2px; }
+        .tr { top: 0; right: 0; border-width: 2px 2px 0 0; }
+        .bl { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+        .br { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+
+        .auth-input {
+            width: 100%; background-color: rgba(3, 7, 18, 0.5);
+            border: 1px solid #374151; border-radius: 0.25rem;
+            padding: 0.75rem; color: white; margin-bottom: 1rem;
+            font-family: var(--font-data); outline: none; transition: 0.3s;
+        }
+        .auth-input:focus { border-color: var(--marvel-red); box-shadow: 0 0 0 1px var(--marvel-red); }
+        
+        .auth-submit {
+            width: 100%; background-color: #dc2626; color: white;
+            padding: 0.75rem; font-weight: 700; border-radius: 0.375rem;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            border: none; cursor: pointer; transition: 0.3s;
+            box-shadow: 0 10px 15px -3px rgba(220, 38, 38, 0.3);
+        }
+        .auth-submit:hover { background-color: #ef4444; }
+
+        /* Character Big Card Modal */
+        .big-card-container {
+            background-color: var(--bg-panel-transparent);
+            border: 1px solid rgba(230, 36, 41, 0.5);
+            border-radius: 0.75rem;
+            width: 90%; max-width: 800px;
+            height: 85vh; /* Mobile Default */
+            box-shadow: 0 0 60px rgba(220, 38, 38, 0.3);
+            position: relative; overflow: hidden;
+            display: flex; flex-direction: column;
+            transition: transform 0.3s; transform: scale(1);
+        }
+        @media (min-width: 768px) {
+            .big-card-container { height: 500px; flex-direction: row; }
+        }
+
+        .close-modal-btn {
+            position: absolute; top: 0.75rem; right: 0.75rem; z-index: 20;
+            width: 2rem; height: 2rem; border-radius: 50%;
+            background-color: #030712; border: 1px solid rgba(230, 36, 41, 0.3);
+            color: var(--marvel-red); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.2s; padding: 0;
+        }
+        .close-modal-btn:hover { background-color: rgba(220, 38, 38, 0.2); border-color: #ef4444; color: #ef4444; }
+
+        .modal-left {
+            position: relative; overflow: hidden;
+            height: 16rem; flex-shrink: 0;
+        }
+        @media (min-width: 768px) {
+            .modal-left { width: 41.666%; height: 100%; } /* 5/12 width */
+        }
+        .modal-cover-img {
+            width: 100%; height: 100%; object-fit: cover; object-position: top;
+            transition: transform 0.7s;
+        }
+        .big-card-container:hover .modal-cover-img { transform: scale(1.1); }
+        .modal-gradient {
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, #111827, transparent);
+        }
+        @media (min-width: 768px) {
+            .modal-gradient { background: linear-gradient(to right, #111827, transparent); }
+        }
+
+        .modal-right {
+            flex-grow: 1; padding: 1.5rem; display: flex; flex-direction: column;
+            background-color: rgba(17, 24, 39, 0.5); overflow: hidden; height: 100%;
+        }
+        @media (min-width: 768px) { .modal-right { padding: 2rem; width: 58.333%; } }
+
+        .modal-header { margin-bottom: 1rem; flex-shrink: 0; }
+        .modal-name {
+            font-size: 1.875rem; font-family: var(--font-head); font-weight: 800;
+            background: linear-gradient(to right, var(--marvel-red), var(--marvel-gold));
+            -webkit-background-clip: text; color: transparent;
+            text-transform: uppercase; line-height: 1; letter-spacing: 0.05em;
+        }
+        .modal-id { font-size: 0.625rem; font-family: var(--font-data); color: rgba(239, 68, 68, 0.8); margin-top: 0.25rem; display: flex; align-items: center; }
+        .id-dot { width: 0.5rem; height: 0.5rem; background-color: var(--marvel-red); border-radius: 50%; margin-right: 0.5rem; animation: pulse-slow 2s infinite; }
+
+        .modal-stats-scroll {
+            flex-grow: 1; overflow-y: auto; padding-right: 0.5rem; display: flex; flex-direction: column; gap: 1rem;
+        }
+        .stat-block {
+            background-color: rgba(3, 7, 18, 0.5); padding: 0.75rem; border-radius: 0.25rem;
+            border-left: 4px solid; transition: background 0.2s;
+        }
+        .stat-block:hover { background-color: rgba(3, 7, 18, 0.8); }
+        .stat-origin { border-color: var(--marvel-red); }
+        .stat-powers { border-color: var(--marvel-gold); }
+        
+        .stat-label { font-size: 0.625rem; font-family: var(--font-data); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.25rem; }
+        .stat-text { font-size: 0.875rem; color: #d1d5db; font-weight: 300; line-height: 1.6; }
+
+        .modal-footer {
+            margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(230, 36, 41, 0.1);
+            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+        }
+        
+        .filter-btn {
+            flex: 1; margin-right: 0.75rem;
+            background-color: rgba(220, 38, 38, 0.2); border: 1px solid rgba(220, 38, 38, 0.5);
+            color: #fca5a5; padding: 0.5rem 1rem; border-radius: 0.25rem;
+            font-family: var(--font-head); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+            cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        .filter-btn:hover { background-color: rgba(220, 38, 38, 0.4); color: white; }
+
+        /* Footer */
+        footer {
+            padding: 2rem; text-align: center; border-top: 1px solid rgba(230, 36, 41, 0.1);
+            margin-top: 2.5rem; background-color: rgba(17, 24, 39, 0.8); backdrop-filter: blur(4px);
+            position: relative; z-index: 10;
+        }
+        .footer-quote {
+            font-size: 1.5rem; font-family: var(--font-head); font-weight: 700;
+            background: linear-gradient(to right, var(--marvel-red), var(--marvel-gold));
+            -webkit-background-clip: text; color: transparent;
+            margin-bottom: 0.75rem; letter-spacing: 0.05em;
+        }
+        .footer-sys { font-size: 0.75rem; color: var(--text-gray); font-family: var(--font-data); }
+
+        /* --- Landing Page Specific CSS --- */
+        .landing-page {
+            position: fixed; inset: 0; z-index: 60;
+            background-color: var(--bg-dark);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding-top: 5rem; /* Space for the header */
+        }
+        .landing-title {
+            font-size: 4rem; /* H1 size */
+            color: var(--text-white);
+            animation: fade-in-up 1s ease-out both;
+            animation-delay: 0.2s;
+            margin-bottom: 1rem;
+            line-height: 1;
+        }
+        .landing-title span {
+            color: var(--marvel-red);
+        }
+        .landing-subtitle {
+            font-size: 1.5rem;
+            color: var(--text-gray);
+            font-family: var(--font-data);
+            animation: fade-in-up 1s ease-out both;
+            animation-delay: 0.5s;
+            margin-bottom: 3rem;
+        }
+        .landing-button {
+            padding: 1rem 3rem;
+            background-color: var(--marvel-red);
+            color: var(--text-white);
+            border: 2px solid var(--marvel-red);
+            border-radius: 0.5rem;
+            font-size: 1.25rem;
+            font-family: var(--font-head);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            animation: fade-in-up 1s ease-out both;
+            animation-delay: 0.8s;
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.4);
+        }
+        .landing-button:hover {
+            background-color: #b91c1c;
+            box-shadow: 0 0 30px rgba(220, 38, 38, 0.6);
+        }
+        @media (max-width: 640px) {
+            .landing-title { font-size: 3rem; }
+            .landing-subtitle { font-size: 1rem; }
+            .landing-button { padding: 0.75rem 2rem; font-size: 1rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Animated Starfield Background -->
+    <canvas id="starfield"></canvas>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="modal-overlay">
+        <div class="auth-box">
+            <!-- Deco Corners -->
+            <div class="corner-deco tl"></div>
+            <div class="corner-deco tr"></div>
+            <div class="corner-deco bl"></div>
+            <div class="corner-deco br"></div>
+
+            <button onclick="closeAuthModal()" class="close-modal-btn" style="top: 1rem; right: 1rem;">
+                <i data-lucide="x"></i>
+            </button>
+            
+            <div class="text-center" style="margin-bottom: 2rem;">
+                <div style="display: flex; justify-content: center; margin-bottom: 0.75rem; color: var(--marvel-red);">
+                    <i data-lucide="shield" style="width: 3rem; height: 3rem;"></i>
+                </div>
+                <h2 style="font-size: 1.5rem; color: var(--marvel-red); letter-spacing: 0.1em; text-transform: uppercase;">S.H.I.E.L.D. ACCESS</h2>
+                <p style="font-size: 0.75rem; color: var(--text-gray); font-family: var(--font-data); margin-top: 0.25rem;">IDENTITY VERIFICATION REQUIRED</p>
+            </div>
+
+            <div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-family: var(--font-data); color: rgba(239, 68, 68, 0.8); margin-bottom: 0.25rem;">AGENT ID</label>
+                    <input type="text" value="AGENT-001" class="auth-input" />
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.75rem; font-family: var(--font-data); color: rgba(239, 68, 68, 0.8); margin-bottom: 0.25rem;">SECURITY CLEARANCE CODE</label>
+                    <input type="password" value="********" class="auth-input" />
+                </div>
+                
+                <button onclick="login()" class="auth-submit" style="margin-top: 1rem;">
+                    Authenticate
+                </button>
+                
+                <div class="text-center" style="margin-top: 1.5rem;">
+                        <p style="font-size: 0.625rem; color: rgba(248, 113, 113, 0.7); text-transform: uppercase; letter-spacing: 0.1em; font-family: var(--font-data);">
+                        Warning: Unauthorized access is a Level 8 violation.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Character Detail Modal (Big Card) -->
+    <div id="character-modal" class="modal-overlay">
+        <!-- Backdrop handled by container click in CSS logic, but here we add click listener on overlay -->
+        <div style="position: absolute; inset: 0;" onclick="closeCharacterModal()"></div>
+
+        <!-- The Big Card -->
+        <div class="big-card-container">
+            
+            <!-- Decorative HUD Elements -->
+            <div class="corner-deco tl" style="width: 4rem; height: 4rem; border-color: rgba(239,68,68,0.5); border-radius: 0.75rem 0 0 0;"></div>
+            <div class="corner-deco br" style="width: 4rem; height: 4rem; border-color: rgba(239,68,68,0.5); border-radius: 0 0 0.75rem 0;"></div>
+            <div style="position: absolute; top: 1rem; right: 3rem; height: 1px; width: 6rem; background: rgba(239,68,68,0.3);"></div>
+            <div style="position: absolute; bottom: 1rem; left: 3rem; height: 1px; width: 6rem; background: rgba(239,68,68,0.3);"></div>
+
+            <!-- Close Button -->
+            <button onclick="closeCharacterModal()" class="close-modal-btn">
+                <i data-lucide="x" style="width: 1rem; height: 1rem;"></i>
+            </button>
+
+            <!-- Left: Portrait -->
+            <div class="modal-left">
+                <img id="modal-char-img" src="" alt="Character" class="modal-cover-img">
+                <div class="modal-gradient"></div>
+                
+                <!-- Mobile Overlay Name -->
+                <div style="position: absolute; bottom: 1rem; left: 1rem; display: block; width: 100%;">
+                    <h2 id="modal-char-name-mobile" class="modal-name" style="font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8); display: none;"></h2>
+                </div>
+            </div>
+
+            <!-- Right: Data Console -->
+            <div class="modal-right">
+                <!-- Header -->
+                <div class="modal-header">
+                    <h2 id="modal-char-name" class="modal-name"></h2>
+                    <div class="modal-id">
+                        <span class="id-dot"></span>
+                        SUBJECT ID: <span id="modal-char-id-display" style="margin-left: 0.25rem;"></span>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="modal-stats-scroll custom-scrollbar">
+                    <div class="stat-block stat-origin">
+                        <h3 class="stat-label text-red">Origin Data</h3>
+                        <p id="modal-char-origin" class="stat-text"></p>
+                    </div>
+
+                    <div class="stat-block stat-powers">
+                        <h3 class="stat-label text-gold">Capabilities</h3>
+                        <p id="modal-char-powers" class="stat-text"></p>
+                    </div>
+
+                    <div>
+                        <h3 class="stat-label" style="color: var(--text-gray); margin-bottom: 0.5rem;">Timeline Records</h3>
+                        <div id="modal-char-appearances" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                            <!-- Tags injected here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="modal-footer">
+                    <button id="modal-filter-btn" class="filter-btn">
+                        <i data-lucide="filter" style="width: 1rem; height: 1rem;"></i>
+                        Isolate Timeline
+                    </button>
+                    <!-- Simulated 'Share' icon -->
+                    <button style="padding: 0.5rem; border: 1px solid #374151; border-radius: 0.25rem; color: #9ca3af; background: none; cursor: pointer; display: flex; align-items: center;">
+                        <i data-lucide="share-2" style="width: 1rem; height: 1rem;"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Movie Detail Modal -->
+    <div id="movie-modal" class="modal-overlay">
+        <div style="position: absolute; inset: 0;" onclick="closeMovieModal()"></div>
+        <div class="big-card-container">
+            <!-- Deco -->
+            <div class="corner-deco tl" style="width: 4rem; height: 4rem; border-color: rgba(239,68,68,0.5); border-radius: 0.75rem 0 0 0;"></div>
+            <div class="corner-deco br" style="width: 4rem; height: 4rem; border-color: rgba(239,68,68,0.5); border-radius: 0 0 0.75rem 0;"></div>
+            <div style="position: absolute; top: 1rem; right: 3rem; height: 1px; width: 6rem; background: rgba(239,68,68,0.3);"></div>
+            <div style="position: absolute; bottom: 1rem; left: 3rem; height: 1px; width: 6rem; background: rgba(239,68,68,0.3);"></div>
+
+            <!-- Close Btn -->
+            <button onclick="closeMovieModal()" class="close-modal-btn">
+                <i data-lucide="x" style="width: 1rem; height: 1rem;"></i>
+            </button>
+
+            <!-- Left: Poster -->
+            <div class="modal-left">
+                <img id="modal-movie-img" src="" alt="Movie" class="modal-cover-img">
+                <div class="modal-gradient"></div>
+            </div>
+            <!-- Right: Details -->
+            <div class="modal-right">
+                <div class="modal-header">
+                    <h2 id="modal-movie-title" class="modal-name"></h2>
+                    <div class="modal-id">
+                        <span class="id-dot"></span>
+                        RELEASE: <span id="modal-movie-year" style="margin-left: 0.25rem;"></span>
+                        <span style="margin: 0 0.5rem; color: #666;">|</span>
+                        RATING: <span id="modal-movie-rating" style="margin-left: 0.25rem; color: var(--marvel-gold);"></span>
+                    </div>
+                </div>
+                <div class="modal-stats-scroll custom-scrollbar">
+                    <div class="stat-block stat-origin">
+                        <h3 class="stat-label text-red">Synopsis</h3>
+                        <p id="modal-movie-synopsis" class="stat-text"></p>
+                    </div>
+                    <div>
+                        <h3 class="stat-label" style="color: var(--text-gray); margin-bottom: 0.5rem;">Characters</h3>
+                        <div id="modal-movie-characters" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+                    </div>
+                </div>
+                 <div class="modal-footer" id="modal-movie-footer">
+                    <!-- Dynamic Watch Button here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <!-- Header is controlled by JS state -->
+    <header id="main-header">
+        <div class="header-content">
+            <h1 class="logo" onclick="setView('timeline')">
+                MCU <span class="text-white">TIMELINE</span>
+            </h1>
+
+            <div class="nav-container" id="nav-container">
+                <!-- Nav Buttons generated by JS -->
+            </div>
+
+            <div class="auth-container" id="auth-status">
+                <!-- Auth status generated by JS -->
+            </div>
+        </div>
+    </header>
+
+    <!-- Landing Page Container -->
+    <div id="landing-page" class="landing-page">
+        <!-- Content will be injected by renderLandingPage -->
+    </div>
+    
+    <!-- Main Content Area -->
+    <!-- Initially hidden, shows after clicking Explore Now -->
+    <main id="app-root" class="data-transition" style="padding-top: 1.5rem; min-height: 80vh; display: none;">
+        <!-- Content injected here -->
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p class="footer-quote">
+            "WITH GREAT POWER COMES GREAT RESPONSIBILITY"
+        </p>
+        <p class="footer-sys">
+            // SYSTEM_MESSAGE: DATA_INTEGRITY_CHECK_OK. // UI_RENDER_COMPLETE.
+        </p>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- BACKGROUND ANIMATION ---
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        const stars = [];
+        const numStars = 300;
+
+        function initStars() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            
+            stars.length = 0;
+            for(let i=0; i<numStars; i++) {
+                stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 1.5,
+                    speed: Math.random() * 0.8 + 0.2, // Falling speed
+                    opacity: Math.random() * 0.8 + 0.2
+                });
+            }
+        }
+
+        function animateStars() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw dark background
+            ctx.fillStyle = '#030712'; 
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = 'white';
+            stars.forEach(star => {
+                ctx.globalAlpha = star.opacity;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Move Star
+                star.y += star.speed;
+                // Reset if it goes off screen
+                if(star.y > height) {
+                    star.y = 0;
+                    star.x = Math.random() * width;
+                }
+            });
+            ctx.globalAlpha = 1.0;
+            requestAnimationFrame(animateStars);
+        }
+
+        window.addEventListener('resize', initStars);
+
+        // --- DATA ---
+       const MOCK_CONTENT = [
+            // Phase 1
+            { id: 'im', title: 'Iron Man', type: 'Movie', releaseYear: 2008, chronologicalOrder: 3, theatricalRelease: 1, synopsis: 'Tony Stark builds an armored suit and becomes Iron Man.', posterUrl: 'database/movies/ironMan1.jpg?text=Iron+Man', characterIds: ['tony', 'rhodes', 'pepper', 'happy'], rating: 7.9 },
+            { id: 'ih', title: 'The Incredible Hulk', type: 'Movie', releaseYear: 2008, chronologicalOrder: 5, theatricalRelease: 2, synopsis: 'Bruce Banner seeks a cure for the gamma radiation that transforms him.', posterUrl: 'database/movies/incHulk.jpg?text=Hulk', characterIds: ['bruce', 'ross'], rating: 6.6 },
+            { id: 'im2', title: 'Iron Man 2', type: 'Movie', releaseYear: 2010, chronologicalOrder: 4, theatricalRelease: 3, synopsis: 'Tony must contend with the government, the press, and a new rival.', posterUrl: 'database/movies/ironMan2.jpg?text=Iron+Man+2', characterIds: ['tony', 'rhodes', 'pepper', 'natasha', 'happy'], rating: 7.0 },
+            { id: 'th', title: 'Thor', type: 'Movie', releaseYear: 2011, chronologicalOrder: 6, theatricalRelease: 4, synopsis: 'The powerful but arrogant god Thor is banished to Earth.', posterUrl: 'database/movies/thor.jpg?text=Thor', characterIds: ['thor', 'loki', 'odin', 'hawkeye'], rating: 7.0 },
+            { id: 'ca', title: 'Captain America: The First Avenger', type: 'Movie', releaseYear: 2011, chronologicalOrder: 1, theatricalRelease: 5, synopsis: 'Steve Rogers transforms into Captain America and battles Red Skull during WWII.', posterUrl: 'database/movies/capFirstAvenger].jpg?text=CA:+TFA', characterIds: ['steve', 'bucky', 'peggy', 'redskull'], rating: 6.9 },
+            { id: 'av', title: 'The Avengers', type: 'Movie', releaseYear: 2012, chronologicalOrder: 7, theatricalRelease: 6, synopsis: 'The Avengers assemble to stop Loki and his alien army.', posterUrl: 'database/movies/avengers.jpg?text=Avengers', characterIds: ['tony', 'steve', 'thor', 'natasha', 'bruce', 'hawkeye', 'loki'], rating: 8.0 },
+            // Phase 2
+            { id: 'im3', title: 'Iron Man 3', type: 'Movie', releaseYear: 2013, chronologicalOrder: 8, theatricalRelease: 7, synopsis: 'Tony Stark faces a powerful enemy, the Mandarin.', posterUrl: 'database/movies/ironMan3.jpg?text=Iron+Man+3', characterIds: ['tony', 'rhodes', 'pepper', 'happy'], rating: 7.1 },
+            { id: 'th2', title: 'Thor: The Dark World', type: 'Movie', releaseYear: 2013, chronologicalOrder: 9, theatricalRelease: 8, synopsis: 'Thor teams up with Loki to save the Nine Realms from the Dark Elves.', posterUrl: 'database/movies/thorDarkWorld.jpg?text=Thor+2', characterIds: ['thor', 'loki', 'odin'], rating: 6.8 },
+            { id: 'ca2', title: 'Captain America: The Winter Soldier', type: 'Movie', releaseYear: 2014, chronologicalOrder: 10, theatricalRelease: 9, synopsis: 'Steve Rogers teams up with Black Widow to battle the Winter Soldier.', posterUrl: 'database/movies/winterSoldier.jpg?text=CA:+Winter+Soldier', characterIds: ['steve', 'natasha', 'bucky', 'sam', 'fury'], rating: 7.8 },
+            { id: 'gotg', title: 'Guardians of the Galaxy', type: 'Movie', releaseYear: 2014, chronologicalOrder: 11, theatricalRelease: 10, synopsis: 'A group of intergalactic criminals are forced to work together.', posterUrl: 'database/movies/gog.jpg?text=GotG', characterIds: ['quill', 'gamora', 'rocket', 'groot', 'drax'], rating: 8.0 },
+            { id: 'av2', title: 'Avengers: Age of Ultron', type: 'Movie', releaseYear: 2015, chronologicalOrder: 13, theatricalRelease: 11, synopsis: 'The Avengers fight Ultron, an AI hell-bent on human extinction.', posterUrl: 'database/movies/aoU.jpg?text=AoU', characterIds: ['tony', 'steve', 'thor', 'natasha', 'bruce', 'hawkeye', 'wanda', 'vision', 'rhodes'], rating: 7.3 },
+            { id: 'am', title: 'Ant-Man', type: 'Movie', releaseYear: 2015, chronologicalOrder: 14, theatricalRelease: 12, synopsis: 'Scott Lang must embrace his inner hero and help his mentor.', posterUrl: 'database/movies/antman.jpg?text=Ant-Man', characterIds: ['scott', 'hope', 'sam'], rating: 7.3 },
+            // Phase 3
+            { id: 'ca3', title: 'Captain America: Civil War', type: 'Movie', releaseYear: 2016, chronologicalOrder: 15, theatricalRelease: 13, synopsis: 'Political interference fractures the Avengers into two camps.', posterUrl: 'database/movies/civilWar.jpg?text=Civil+War', characterIds: ['steve', 'tony', 'natasha', 'bucky', 'sam', 'rhodes', 'wanda', 'vision', 'tChalla', 'peter', 'scott', 'hawkeye'], rating: 7.8 },
+            { id: 'ds', title: 'Doctor Strange', type: 'Movie', releaseYear: 2016, chronologicalOrder: 19, theatricalRelease: 14, synopsis: 'Dr. Stephen Strange learns the mystic arts after a career-ending accident.', posterUrl: 'database/movies/dr.strange.jpg?text=Dr+Strange', characterIds: ['strange', 'wong'], rating: 7.5 },
+            { id: 'gotg2', title: 'Guardians of the Galaxy Vol. 2', type: 'Movie', releaseYear: 2017, chronologicalOrder: 12, theatricalRelease: 15, synopsis: 'The Guardians struggle to keep together as a team while dealing with Peter\'s parentage.', posterUrl: 'database/movies/gog2.jpeg?text=GotG+2', characterIds: ['quill', 'gamora', 'rocket', 'groot', 'drax', 'nebula', 'mantis'], rating: 7.6 },
+            { id: 'sm1', title: 'Spider-Man: Homecoming', type: 'Movie', releaseYear: 2017, chronologicalOrder: 18, theatricalRelease: 16, synopsis: 'Peter Parker balances his life as a high school student and Spider-Man.', posterUrl: 'database/movies/homecoming.jpg?text=Homecoming', characterIds: ['peter', 'tony', 'happy'], rating: 7.4 },
+            { id: 'th3', title: 'Thor: Ragnarok', type: 'Movie', releaseYear: 2017, chronologicalOrder: 20, theatricalRelease: 17, synopsis: 'Thor must escape the alien planet Sakaar to save Asgard from Hela.', posterUrl: 'database/movies/thorRangnarok.jpg?text=Ragnarok', characterIds: ['thor', 'loki', 'bruce', 'strange'], rating: 7.9 },
+            { id: 'bp', title: 'Black Panther', type: 'Movie', releaseYear: 2018, chronologicalOrder: 17, theatricalRelease: 18, synopsis: 'T\'Challa, heir to the hidden kingdom of Wakanda, must lead his people into a new future.', posterUrl: 'database/movies/blackpanther.jpg?text=Black+Panther', characterIds: ['tChalla', 'shuri', 'okoye', 'ross'], rating: 7.3 },
+            { id: 'av3', title: 'Avengers: Infinity War', type: 'Movie', releaseYear: 2018, chronologicalOrder: 22, theatricalRelease: 19, synopsis: 'The Avengers and their allies must sacrifice all to defeat Thanos.', posterUrl: 'database/movies/infinityWar.jpg?text=Infinity+War', characterIds: ['tony', 'steve', 'thor', 'natasha', 'bruce', 'strange', 'peter', 'tChalla', 'quill', 'gamora', 'wanda', 'vision', 'bucky', 'sam'], rating: 8.4 },
+            { id: 'am2', title: 'Ant-Man and the Wasp', type: 'Movie', releaseYear: 2018, chronologicalOrder: 21, theatricalRelease: 20, synopsis: 'Scott Lang balances being both a superhero and a father.', posterUrl: 'database/movies/antman&wasp.jpg?text=Ant-Man+Wasp', characterIds: ['scott', 'hope'], rating: 7.0 },
+            { id: 'cm', title: 'Captain Marvel', type: 'Movie', releaseYear: 2019, chronologicalOrder: 2, theatricalRelease: 21, synopsis: 'Carol Danvers becomes one of the universe\'s most powerful heroes.', posterUrl: 'database/movies/capMarvel.jpg?text=Cap+Marvel', characterIds: ['carol', 'fury'], rating: 6.8 },
+            { id: 'av4', title: 'Avengers: Endgame', type: 'Movie', releaseYear: 2019, chronologicalOrder: 23, theatricalRelease: 22, synopsis: 'The remaining Avengers assemble once more to reverse Thanos\' actions.', posterUrl: 'database/movies/endgame.jpg?text=Endgame', characterIds: ['tony', 'steve', 'thor', 'natasha', 'bruce', 'hawkeye', 'scott', 'carol', 'nebula', 'rocket', 'rhodes'], rating: 8.4 },
+            { id: 'sm2', title: 'Spider-Man: Far From Home', type: 'Movie', releaseYear: 2019, chronologicalOrder: 24, theatricalRelease: 23, synopsis: 'Peter Parker takes a school trip to Europe but trouble follows.', posterUrl: 'database/movies/farfromhome.jpg?text=Far+From+Home', characterIds: ['peter', 'happy', 'fury'], rating: 7.4 },
+            // Phase 4
+            { id: 'bw', title: 'Black Widow', type: 'Movie', releaseYear: 2021, chronologicalOrder: 16, theatricalRelease: 24, synopsis: 'Natasha Romanoff confronts the darker parts of her ledger.', posterUrl: 'database/movies/blackwidow.jpg?text=Black+Widow', characterIds: ['natasha', 'yelena', 'ross'], rating: 6.7 },
+            { id: 'sc', title: 'Shang-Chi and the Legend of the Ten Rings', type: 'Movie', releaseYear: 2021, chronologicalOrder: 25, theatricalRelease: 25, synopsis: 'Shang-Chi confronts the past he thought he left behind.', posterUrl: 'database/movies/shang chi.jpg?text=Shang-Chi', characterIds: ['shangchi', 'wong'], rating: 7.4 },
+            { id: 'et', title: 'Eternals', type: 'Movie', releaseYear: 2021, chronologicalOrder: 26, theatricalRelease: 26, synopsis: 'Ancient aliens living on Earth in secret for thousands of years emerge to protect it.', posterUrl: 'database/movies/eternals.jpg?text=Eternals', characterIds: ['thena', 'ikaris', 'sersi'], rating: 6.3 },
+            { id: 'sm3', title: 'Spider-Man: No Way Home', type: 'Movie', releaseYear: 2021, chronologicalOrder: 27, theatricalRelease: 27, synopsis: 'Peter Parker asks Doctor Strange for help, but the spell goes wrong.', posterUrl: 'database/movies/nowayhome.jpg?text=No+Way+Home', characterIds: ['peter', 'strange', 'wong', 'happy', 'daredevil'], rating: 8.2 },
+            { id: 'ds2', title: 'Doctor Strange in the Multiverse of Madness', type: 'Movie', releaseYear: 2022, chronologicalOrder: 28, theatricalRelease: 28, synopsis: 'Doctor Strange traverses the mind-bending alternate realities of the Multiverse.', posterUrl: 'database/movies/MOM.jpg?text=MoM', characterIds: ['strange', 'wanda', 'wong', 'chavez'], rating: 6.9 },
+            { id: 'th4', title: 'Thor: Love and Thunder', type: 'Movie', releaseYear: 2022, chronologicalOrder: 29, theatricalRelease: 29, synopsis: 'Thor enlists the help of Valkyrie, Korg and ex-girlfriend Jane Foster.', posterUrl: 'database/movies/loveNThunder.jpg?text=Love+Thunder', characterIds: ['thor', 'quill', 'rocket', 'groot', 'mantis', 'drax'], rating: 6.2 },
+            { id: 'bp2', title: 'Black Panther: Wakanda Forever', type: 'Movie', releaseYear: 2022, chronologicalOrder: 30, theatricalRelease: 30, synopsis: 'The people of Wakanda fight to protect their home from intervening world powers.', posterUrl: 'database/movies/wakandaforever.jpg?text=Wakanda+Forever', characterIds: ['shuri', 'okoye', 'ironheart'], rating: 6.7 },
+            // Phase 5
+            { id: 'am3', title: 'Ant-Man and the Wasp: Quantumania', type: 'Movie', releaseYear: 2023, chronologicalOrder: 31, theatricalRelease: 31, synopsis: 'Scott Lang and Hope van Dyne explore the Quantum Realm.', posterUrl: 'database/movies/quantumania.jpg?text=Quantumania', characterIds: ['scott', 'hope', 'kang'], rating: 6.1 },
+            { id: 'gotg3', title: 'Guardians of the Galaxy Vol. 3', type: 'Movie', releaseYear: 2023, chronologicalOrder: 32, theatricalRelease: 32, synopsis: 'The Guardians must save Rocket\'s life.', posterUrl: 'database/movies/gog3.jpg?text=GotG+3', characterIds: ['quill', 'gamora', 'rocket', 'groot', 'drax', 'nebula', 'mantis'], rating: 7.9 },
+            { id: 'tm', title: 'The Marvels', type: 'Movie', releaseYear: 2023, chronologicalOrder: 33, theatricalRelease: 33, synopsis: 'Carol Danvers gets her powers entangled with those of Kamala Khan and Monica Rambeau.', posterUrl: 'database/movies/themarvels.jpg?text=The+Marvels', characterIds: ['carol', 'kamala', 'monica', 'fury'], rating: 5.6 },
+            { id: 'dp3', title: 'Deadpool & Wolverine', type: 'Movie', releaseYear: 2024, chronologicalOrder: 34, theatricalRelease: 34, synopsis: 'Wolverine is recovering from his injuries when he crosses paths with the loudmouth, Deadpool.', posterUrl: 'database/movies/D&W.jpg?text=Deadpool+Wolverine', characterIds: ['wade', 'logan'], rating: 8.1 },
+            { id: 'ca4', title: 'Captain America: Brave New World (Planned)', type: 'Movie', releaseYear: 2025, chronologicalOrder: 35, theatricalRelease: 35, synopsis: 'Sam Wilson takes flight in his first solo adventure as Captain America.', posterUrl: 'database/movies/bravenewworld.jpg?text=Brave+New+World', characterIds: ['sam', 'ross'], rating: 0 },
+            { id: 'tb', title: 'Thunderbolts* (Planned)', type: 'Movie', releaseYear: 2025, chronologicalOrder: 36, theatricalRelease: 36, synopsis: 'A group of anti-heroes are sent on a mission by the government.', posterUrl: 'database/movies/thunderbolts.jpg?text=Thunderbolts', characterIds: ['yelena', 'bucky', 'redguardian', 'usagent'], rating: 0 },
+            // Phase 6
+            { id: 'f4', title: 'The Fantastic Four: First Steps (Planned)', type: 'Movie', releaseYear: 2025, chronologicalOrder: 37, theatricalRelease: 37, synopsis: 'Marvel\'s First Family heads to the big screen.', posterUrl: 'database/movies/fantastic4.jpg?text=Fantastic+Four', characterIds: ['reed', 'sue', 'johnny', 'ben'], rating: 0 },
+        ];
+
+        // INSTRUCTIONS: 
+        // 1. 'imageUrl': The small square image shown in the Character Grid.
+        // 2. 'coverUrl': The large portrait image shown in the Identity Card Modal.
+        // If 'coverUrl' is missing, the system will use 'imageUrl' instead.
+        const MOCK_CHARACTERS = [
+            // Original Avengers
+            { 
+                id: 'tony', 
+                name: 'Tony Stark / Iron Man', 
+                origin: 'Billionaire genius, founded Avengers.', 
+                powers: 'Powered armor, flight, beams.', 
+                appearances: ['im', 'im2', 'av', 'im3', 'av2', 'ca3', 'sm1', 'av3', 'av4'],
+                imageUrl: 'database/characters/tony.jpg?text=TONY', 
+                coverUrl: 'database/characters/tony.jpg' // REPLACE THIS WITH YOUR IMAGE LINK
+            },
+            { 
+                id: 'steve', 
+                name: 'Steve Rogers / Captain America', 
+                origin: 'WWII Super Soldier.', 
+                powers: 'Super strength, agility, shield.', 
+                appearances: ['ca', 'av', 'ca2', 'av2', 'ca3', 'av3', 'av4'],
+                imageUrl: 'database/characters/cap.jpg?text=STEVE',
+                coverUrl: 'database/characters/cap.jpg?text=CAPTAIN+AMERICA'
+            },
+            { 
+                id: 'thor', 
+                name: 'Thor Odinson', 
+                origin: 'God of Thunder.', 
+                powers: 'Lightning, Mjolnir, Stormbreaker.', 
+                appearances: ['th', 'av', 'th2', 'av2', 'th3', 'av3', 'av4', 'th4'],
+                imageUrl: 'database/characters/thor.jpg?text=STEVE', // Add URL here
+                coverUrl: 'database/characters/thor.jpg?text=STEVE'  // Add URL here
+            },
+            { 
+                id: 'natasha', 
+                name: 'Natasha Romanoff / Black Widow', 
+                origin: 'Master Assassin.', 
+                powers: 'Martial arts, spycraft.', 
+                appearances: ['im2', 'av', 'ca2', 'av2', 'ca3', 'av3', 'av4', 'bw'],
+                imageUrl: 'database/characters/natasha.jpg?text=STEVE',
+                coverUrl: 'database/characters/natasha.jpg?text=STEVE'
+            },
+            { id: 'bruce',
+              name: 'Bruce Banner / Hulk',
+              origin: 'Gamma radiation accident.',
+              powers: 'Super strength, invulnerability.',
+              appearances: ['ih', 'av', 'av2', 'th3', 'av3', 'av4'],
+              imageUrl: 'database/characters/bruce.jpg?text=STEVE',
+              coverUrl: 'database/characters/bruce.jpg?text=STEVE'
+            },
+            { id: 'hawkeye', name: 'Clint Barton / Hawkeye', origin: 'Master Archer.', powers: 'Perfect aim, combat.', appearances: ['th', 'av', 'av2', 'ca3', 'av4'], 
+            imageUrl: 'database/characters/hawkeye.jpg?text=STEVE',
+              coverUrl: 'database/characters/hawkeye.jpg?text=STEVE' },
+            // Key Allies & Villains
+            { id: 'loki', name: 'Loki', origin: 'God of Mischief.', powers: 'Illusions, magic.', appearances: ['th', 'av', 'th2', 'th3', 'av3'], 
+            imageUrl: 'database/characters/loki.jpg?text=STEVE',
+              coverUrl: 'database/characters/loki.jpg?text=STEVE' },
+            { id: 'bucky', name: 'Bucky Barnes / Winter Soldier', origin: 'Hydra assassin turned hero.', powers: 'Metal arm, super soldier.', appearances: ['ca', 'ca2', 'ca3', 'av3', 'av4', 'tb'],
+             imageUrl: 'database/characters/bucky.jpg?text=STEVE',
+              coverUrl: 'database/characters/bucky.jpg?text=STEVE' },
+            { id: 'sam', name: 'Sam Wilson / Falcon / Cap', origin: 'Air Force Pararescue.', powers: 'Flight suit, shield.', appearances: ['ca2', 'am', 'ca3', 'av3', 'av4', 'ca4'], 
+            imageUrl: 'database/characters/samwilson.jpg?text=STEVE',
+              coverUrl: 'database/characters/samwilson.jpg?text=STEVE' },
+            { id: 'rhodes', name: 'James Rhodes / War Machine', origin: 'US Air Force Colonel.', powers: 'War Machine armor.', appearances: ['im', 'im2', 'im3', 'av2', 'ca3', 'av3', 'av4'], imageUrl: 'database/characters/rhodes.jpg?text=STEVE',
+              coverUrl: 'database/characters/rhodes.jpg?text=STEVE' },
+            { id: 'wanda', name: 'Wanda Maximoff / Scarlet Witch', origin: 'Mind Stone experiment.', powers: 'Chaos magic, reality warping.', appearances: ['av2', 'ca3', 'av3', 'av4', 'ds2'], imageUrl: 'database/characters/wanda.jpg?text=STEVE',
+              coverUrl: 'database/characters/wanda.jpg?text=STEVE' },
+            { id: 'vision', name: 'Vision', origin: 'Android created by Ultron.', powers: 'Density control, Mind Stone.', appearances: ['av2', 'ca3', 'av3'],
+             imageUrl: 'database/characters/vision.jpg?text=STEVE',
+              coverUrl: 'database/characters/vision.jpg?text=STEVE' },
+            // Guardians
+            { id: 'quill', name: 'Peter Quill / Star-Lord', origin: 'Abducted from Earth.', powers: 'Pilot, strategist.', appearances: ['gotg', 'gotg2', 'av3', 'av4', 'th4', 'gotg3'], imageUrl: 'database/characters/quill.jpg?text=STEVE',
+              coverUrl: 'database/characters/quill.jpg?text=STEVE' },
+            { id: 'gamora', name: 'Gamora', origin: 'Daughter of Thanos.', powers: 'Master combatant.', appearances: ['gotg', 'gotg2', 'av3', 'av4', 'gotg3'], imageUrl: 'database/characters/gamora.jpg?text=STEVE',
+              coverUrl: 'database/characters/gamora.jpg?text=STEVE'},
+            { id: 'rocket', name: 'Rocket Raccoon', origin: 'Genetically enhanced raccoon.', powers: 'Weapons expert, pilot.', appearances: ['gotg', 'gotg2', 'av3', 'av4', 'th4', 'gotg3'], imageUrl: 'database/characters/rocket.jpg?text=STEVE',
+              coverUrl: 'database/characters/rocket.jpg?text=STEVE' },
+            // New Heroes
+            { id: 'scott', name: 'Scott Lang / Ant-Man', origin: 'Master thief turned hero.', powers: 'Size manipulation.', appearances: ['am', 'ca3', 'am2', 'av4', 'am3'], imageUrl: 'database/characters/scott.jpg?text=STEVE',
+              coverUrl: 'database/characters/scott.jpg?text=STEVE'},
+            { id: 'hope', name: 'Hope van Dyne / Wasp', origin: 'Daughter of Hank Pym.', powers: 'Size manipulation, flight.', appearances: ['am', 'am2', 'av4', 'am3'], imageUrl: 'database/characters/hope.jpg?text=STEVE',
+              coverUrl: 'database/characters/hope.jpg?text=STEVE' },
+            { id: 'peter', name: 'Peter Parker / Spider-Man', origin: 'Bitten by radioactive spider.', powers: 'Web-slinging, strength.', appearances: ['ca3', 'sm1', 'av3', 'av4', 'sm2', 'sm3'], imageUrl: 'database/characters/peter.jpg?text=STEVE',
+              coverUrl: 'database/characters/peter.jpg?text=STEVE' },
+            { id: 'strange', name: 'Dr. Stephen Strange', origin: 'Sorcerer Supreme.', powers: 'Mystic arts, time manipulation.', appearances: ['ds', 'th3', 'av3', 'av4', 'sm3', 'ds2'], imageUrl: 'database/characters/strange.jpg?text=STEVE',
+              coverUrl: 'database/characters/strange.jpg?text=STEVE' },
+            { id: 'tChalla', name: 'T\'Challa / Black Panther', origin: 'King of Wakanda.', powers: 'Enhanced strength, vibranium suit.', appearances: ['ca3', 'bp', 'av3', 'av4'], imageUrl: 'database/characters/tchalla.jpg?text=STEVE',
+              coverUrl: 'database/characters/tchalla.jpg?text=STEVE' },
+            { id: 'carol', name: 'Carol Danvers / Captain Marvel', origin: 'Kree-human hybrid.', powers: 'Cosmic energy, flight.', appearances: ['cm', 'av4', 'tm'], imageUrl: 'database/characters/carol.jpg?text=STEVE',
+              coverUrl: 'database/characters/carol.jpg?text=STEVE' },
+            { id: 'shangchi', name: 'Shang-Chi', origin: 'Son of the Mandarin.', powers: 'Martial arts, Ten Rings.', appearances: ['sc'], imageUrl: 'database/characters/shangchi.jpg?text=STEVE',
+              coverUrl: 'database/characters/shangchi.jpg?text=STEVE' },
+            { id: 'shuri', name: 'Shuri / Black Panther', origin: 'Wakandan genius.', powers: 'Tech expert, vibranium suit.', appearances: ['bp', 'av3', 'av4', 'bp2'], imageUrl: 'database/characters/shuri.jpg?text=STEVE',
+              coverUrl: 'database/characters/shuri.jpg?text=STEVE' },
+            // Multiverse / Recent
+            { id: 'wade', name: 'Deadpool', origin: 'Weapon X experiment.', powers: 'Healing factor, breaking 4th wall.', appearances: ['dp3'], imageUrl: 
+            'database/characters/wade.jpg?text=STEVE',
+              coverUrl: 'database/characters/wade.jpg?text=STEVE' },
+            { id: 'logan', name: 'Wolverine', origin: 'Mutant.', powers: 'Healing factor, adamantium claws.', appearances: ['dp3'], imageUrl: 'database/characters/logan.jpg?text=STEVE',
+              coverUrl: 'database/characters/logan.jpg?text=STEVE' },
+            { id: 'yelena', name: 'Yelena Belova', origin: 'Red Room assassin.', powers: 'Master assassin.', appearances: ['bw', 'tb'], imageUrl: 'database/characters/yelena.jpg?text=STEVE',
+              coverUrl: 'database/characters/yelena.jpg?text=STEVE' },
+        ];
+        
+
+        // --- STATE ---
+        const state = {
+            currentView: 'landing', // Changed initial state to 'landing'
+            viewMode: 'chronological', // 'chronological' | 'theatrical'
+            watchlist: {}, // { contentId: 'Watched' | 'Watching' | 'Plan to Watch' }
+            activeCharacterId: null,
+            isLoggedIn: false
+        };
+
+        // --- HELPERS ---
+        const statusConfig = {
+            'Watched': { icon: 'check-circle', color: 'status-watched', nextStatus: 'Watching' },
+            'Watching': { icon: 'eye', color: 'status-watching', nextStatus: 'Plan to Watch' },
+            'Plan to Watch': { icon: 'list', color: 'status-plan', nextStatus: 'Watched' },
+            'None': { icon: 'list', color: 'status-none', nextStatus: 'Plan to Watch' },
+        };
+
+        // --- RENDER FUNCTIONS ---
+        
+        function renderHeader() {
+            // Render Nav
+            const navContainer = document.getElementById('nav-container');
+            const navItems = [
+                { id: 'timeline', icon: 'globe', label: 'Timeline' },
+                { id: 'characters', icon: 'user', label: 'Characters' },
+                { id: 'profile', icon: 'list', label: 'Watchlist' }
+            ];
+
+            navContainer.innerHTML = navItems.map(item => `
+                <button class="nav-btn ${state.currentView === item.id ? 'active' : 'inactive'}" onclick="setView('${item.id}')">
+                    <i data-lucide="${item.icon}"></i> ${item.label}
+                </button>
+            `).join('');
+
+            // Render Auth
+            const authContainer = document.getElementById('auth-status');
+            if (state.isLoggedIn) {
+                authContainer.innerHTML = `
+                    <div class="user-badge">
+                        <div class="status-dot"></div>
+                        <span class="user-id">AGENT_ROMANOFF</span>
+                    </div>
+                    <button onclick="logout()" class="logout-btn" title="Log Out">
+                        <i data-lucide="log-out" style="width: 1.25rem; height: 1.25rem;"></i>
+                    </button>
+                `;
+            } else {
+                authContainer.innerHTML = `
+                    <button onclick="openAuthModal()" class="login-btn">
+                        Login
+                    </button>
+                `;
+            }
+        }
+
+        // NEW: Landing Page Renderer
+        function renderLandingPage() {
+            const landingPage = document.getElementById('landing-page');
+            const header = document.getElementById('main-header');
+            const main = document.getElementById('app-root');
+
+            // Header is always visible now
+            header.classList.add('visible'); 
+            main.style.display = 'none';
+            
+            // Show landing page
+            landingPage.style.display = 'flex';
+            
+            landingPage.innerHTML = `
+                <h2 class="landing-title">
+                    MARVEL <span class="text-red">CINEMATIC</span> UNIVERSE
+                </h2>
+                <p class="landing-subtitle">
+                    The definitive guide to the Multiverse Saga.
+                </p>
+                <button onclick="explore()" class="landing-button">
+                    Explore Now
+                </button>
+            `;
+            lucide.createIcons();
+        }
+
+        function renderTimeline() {
+            const container = document.getElementById('app-root');
+            const sortField = state.viewMode === 'chronological' ? 'chronologicalOrder' : 'theatricalRelease';
+            
+            // Sort & Filter
+            let displayContent = [...MOCK_CONTENT].sort((a, b) => a[sortField] - b[sortField]);
+            if (state.activeCharacterId) {
+                displayContent = displayContent.filter(item => item.characterIds.includes(state.activeCharacterId));
+            }
+
+            // Controls HTML
+            const filterStatusHTML = state.activeCharacterId 
+                ? `<div>
+                     <span class="filter-active-text font-head uppercase tracking-wide">Character Filter Active</span>
+                     <button onclick="clearFilter()" class="login-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-left: 0.5rem; display: inline-block;">Clear Filter</button>
+                   </div>`
+                : `<span class="text-red font-head uppercase tracking-wide">Universal Timeline Display</span>`;
+
+            const controls = `
+                <div class="view-container">
+                    <div class="timeline-controls">
+                        <h2 class="timeline-title">
+                            ${filterStatusHTML}
+                        </h2>
+                        <div class="flex" style="gap: 0.5rem;">
+                            <button onclick="setMode('chronological')" class="mode-btn ${state.viewMode === 'chronological' ? 'active' : 'inactive'}">
+                                <i data-lucide="clock" style="width: 1.25rem; height: 1.25rem;"></i>
+                                <span>Chronological Order</span>
+                            </button>
+                            <button onclick="setMode('theatrical')" class="mode-btn ${state.viewMode === 'theatrical' ? 'active' : 'inactive'}">
+                                <i data-lucide="globe" style="width: 1.25rem; height: 1.25rem;"></i>
+                                <span>Theatrical Release</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="timeline-wrapper">
+                        <div class="timeline-line ${state.activeCharacterId ? 'filtered' : ''}"></div>
+                        <div class="timeline-cards-container">
+                            ${displayContent.length > 0 ? displayContent.map(item => createContentCard(item)).join('') : 
+                                `<p class="text-white text-center p-10 bg-panel rounded-lg">No content found.</p>`}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = controls;
+        }
+
+        function createContentCard(item) {
+            const currentStatus = state.watchlist[item.id] || 'None';
+            const statusData = currentStatus === 'None' ? statusConfig['Plan to Watch'] : statusConfig[currentStatus];
+            const isFiltered = !!state.activeCharacterId;
+            const filteredClass = isFiltered ? 'filtered' : '';
+
+            return `
+                <div class="content-card ${filteredClass}" onclick="selectMovie('${item.id}')" style="cursor: pointer;">
+                    <!-- Node -->
+                    <div class="timeline-node"></div>
+                    
+                    <div class="card-inner">
+                        <img src="${item.posterUrl}" alt="${item.title}" class="poster-img" onerror="this.src='https://placehold.co/64x96/1f2937/a5f3fc?text=IMG'">
+                        <div class="card-details">
+                            <h3 class="card-title">
+                                ${item.title} <span style="font-size: 0.875rem; color: var(--text-gray);">(${item.releaseYear})</span>
+                            </h3>
+                            <p class="card-meta">
+                                Order: ${item.chronologicalOrder} (Chrono) / ${item.theatricalRelease} (Release)
+                            </p>
+                            <p class="card-synopsis">${item.synopsis}</p>
+                            <div style="margin-top: auto;">
+                                ${createWatchButton(item.id, currentStatus, statusData)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createWatchButton(id, status, config) {
+            const label = status === 'None' ? 'Add to Watchlist' : status;
+            return `
+                <button id="watch-btn-${id}" onclick="event.stopPropagation(); toggleWatchlist('${id}')" class="watch-btn ${config.color}">
+                    <i data-lucide="${config.icon}" style="width: 0.75rem; height: 0.75rem;"></i>
+                    <span>${label}</span>
+                </button>
+            `;
+        }
+
+        function renderCharacters() {
+            const container = document.getElementById('app-root');
+            const filteredChars = MOCK_CHARACTERS; 
+
+            container.innerHTML = `
+                <div class="view-container" style="max-width: 80rem; margin: 0 auto;">
+                    <h2 style="font-size: 1.875rem; color: var(--marvel-red); border-bottom: 1px solid var(--border-dim); padding-bottom: 0.5rem; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                        S.H.I.E.L.D. Character Database
+                    </h2>
+                    
+                    ${state.activeCharacterId ? `
+                        <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; background-color: rgba(220, 38, 38, 0.2); border: 1px solid var(--marvel-red); padding: 0.75rem; border-radius: 0.5rem;">
+                            <p>Filter active: <span style="font-weight: 700; text-transform: uppercase;">${MOCK_CHARACTERS.find(c => c.id === state.activeCharacterId)?.name}</span></p>
+                            <button onclick="clearFilter()" class="login-btn" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;">Clear</button>
+                        </div>
+                    ` : ''}
+
+                    <div class="character-grid">
+                        ${filteredChars.map(char => {
+                            const isActive = char.id === state.activeCharacterId;
+                            const activeClass = isActive ? 'active' : '';
+                            // Check for custom imageUrl, otherwise use default generator
+                            const imgSrc = char.imageUrl || `https://placehold.co/100x100/1f2937/${isActive ? '38bdf8' : 'a5f3fc'}?text=${char.id.toUpperCase()}`;
+                            
+                            return `
+                                <div onclick="selectCharacter('${char.id}')" class="char-card ${activeClass}">
+                                    <img src="${imgSrc}" alt="${char.name}" class="char-img">
+                                    <h3 class="char-name">${char.name}</h3>
+                                    <p class="char-origin">${char.origin}</p>
+                                    <p class="char-stats">Appearances: ${char.appearances.length}</p>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderProfile() {
+            const container = document.getElementById('app-root');
+            
+            if (!state.isLoggedIn) {
+                container.innerHTML = `
+                    <div class="view-container" style="max-width: 56rem; margin: 5rem auto; text-align: center;">
+                        <div style="display: flex; justify-content: center; margin-bottom: 1.5rem; color: var(--text-gray);"><i data-lucide="shield" style="width: 5rem; height: 5rem;"></i></div>
+                        <h2 style="font-size: 1.875rem; color: var(--text-gray); margin-bottom: 0.5rem; text-transform: uppercase;">ACCESS DENIED</h2>
+                        <p style="color: var(--text-gray); margin-bottom: 1.5rem;">You must authenticate to access the personalized S.H.I.E.L.D. watchlist console.</p>
+                        <div style="display: inline-block; padding: 0.5rem 1rem; border: 1px solid #374151; border-radius: 0.25rem; color: var(--text-gray); font-size: 0.875rem; font-family: var(--font-data);">ERROR_CODE: AUTH_REQUIRED</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const watchListItems = Object.entries(state.watchlist)
+                .filter(([, status]) => status !== 'None')
+                .map(([id, status]) => {
+                    const item = MOCK_CONTENT.find(c => c.id === id);
+                    return item ? { ...item, status } : null;
+                })
+                .filter(Boolean)
+                .sort((a, b) => a.chronologicalOrder - b.chronologicalOrder);
+            
+            // Group by status
+            const grouped = { 'Watching': [], 'Plan to Watch': [], 'Watched': [] };
+            watchListItems.forEach(item => { if(grouped[item.status]) grouped[item.status].push(item); });
+
+            let listHTML = '';
+            if (watchListItems.length === 0) {
+                listHTML = `
+                    <div style="padding: 2.5rem; text-align: center; background-color: var(--bg-panel); border-radius: 0.75rem; border: 1px solid rgba(220, 38, 38, 0.3);">
+                        <div style="display: flex; justify-content: center; margin-bottom: 0.75rem; color: var(--marvel-red);"><i data-lucide="list" style="width: 2.5rem; height: 2.5rem;"></i></div>
+                        <p style="font-size: 1.125rem;">Watchlist empty. Explore the Timeline to add items.</p>
+                    </div>
+                `;
+            } else {
+                ['Watching', 'Plan to Watch', 'Watched'].forEach(status => {
+                    const items = grouped[status];
+                    if (items.length > 0) {
+                        const iconName = status === 'Watched' ? 'check-circle' : status === 'Watching' ? 'eye' : 'list';
+                        
+                        // Set colors based on status
+                        let colorStyle = "";
+                        if(status === 'Watched') colorStyle = "color: #22c55e;";
+                        if(status === 'Watching') colorStyle = "color: #eab308;";
+                        if(status === 'Plan to Watch') colorStyle = "color: #E62429;";
+
+                        listHTML += `
+                            <div style="margin-bottom: 2rem;">
+                                <h3 style="font-size: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; ${colorStyle}">
+                                    <i data-lucide="${iconName}" style="width: 1.5rem; height: 1.5rem;"></i>
+                                    <span>${status} (${items.length})</span>
+                                </h3>
+                                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                    ${items.map(item => `
+                                        <div class="profile-item">
+                                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                                <!-- UPDATED: Increased image size for profile/watchlist -->
+                                                <img src="${item.posterUrl}" class="profile-item-img" onerror="this.src='https://placehold.co/56x80/1f2937/a5f3fc?text=IMG'">
+                                                <div class="profile-item-details">
+                                                    <p style="font-weight: 600; font-family: var(--font-head); text-transform: uppercase;">${item.title}</p>
+                                                    <p style="font-size: 0.875rem; color: var(--text-gray); font-family: var(--font-data);">Chrono: ${item.chronologicalOrder}</p>
+                                                </div>
+                                            </div>
+                                            ${createWatchButton(item.id, item.status, statusConfig[item.status])}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            }
+
+            container.innerHTML = `
+                <div class="profile-container">
+                    <div class="profile-header">
+                        <h2 class="profile-title">Personalized Watchlist Console</h2>
+                        <p class="profile-meta">
+                            <span style="color: var(--marvel-red);">STATUS REPORT:</span> Accessing Local User Profile. <span style="color: #22c55e;">Secure.</span>
+                        </p>
+                    </div>
+                    ${listHTML}
+                </div>
+            `;
+        }
+
+        function updateUI() {
+            const root = document.getElementById('app-root');
+            const landing = document.getElementById('landing-page');
+            const header = document.getElementById('main-header');
+
+            renderHeader(); // Always render header content
+
+            if (state.currentView === 'landing') {
+                // Initial load: show landing, ensure header is visible, main content hidden
+                header.classList.add('visible'); 
+                root.style.display = 'none';
+                landing.style.display = 'flex';
+                renderLandingPage(); // Re-render landing page content
+                
+            } else {
+                // After clicking explore: hide landing, show main content and header
+                landing.style.display = 'none';
+                header.classList.add('visible'); // Ensure header is visible
+                root.style.display = 'block';
+
+                root.classList.add('data-transition-active');
+                
+                setTimeout(() => {
+                    if (state.currentView === 'timeline') renderTimeline();
+                    else if (state.currentView === 'characters') renderCharacters();
+                    else if (state.currentView === 'profile') renderProfile();
+                    
+                    lucide.createIcons();
+                    root.classList.remove('data-transition-active');
+                }, 300);
+            }
+        }
+        
+        // NEW: Explore function to start the main application
+        function explore() {
+            state.currentView = 'timeline';
+            updateUI();
+        }
+
+
+        // --- ACTIONS ---
+
+        function setView(view) {
+            if (state.currentView === view) return;
+            state.currentView = view;
+            updateUI();
+        }
+
+        function setMode(mode) {
+            if (state.viewMode === mode) return;
+            state.viewMode = mode;
+            updateUI();
+        }
+
+        // NEW FUNCTION: Handles clearing the filter cleanly
+        function clearFilter() {
+            state.activeCharacterId = null;
+            updateUI();
+        }
+
+        function selectCharacter(id) {
+            const char = MOCK_CHARACTERS.find(c => c.id === id);
+            if (!char) return;
+
+            const modal = document.getElementById('character-modal');
+            const overlay = modal; 
+            
+            // PRIORITY LOGIC: Use coverUrl if available, otherwise imageUrl, otherwise placeholder
+            const imgSrc = char.coverUrl || char.imageUrl || `https://placehold.co/400x600/1f2937/a5f3fc?text=${char.id.toUpperCase()}`;
+            
+            // Populate Modal
+            document.getElementById('modal-char-img').src = imgSrc;
+            
+            // Name handling for responsiveness
+            const nameEl = document.getElementById('modal-char-name');
+            if(nameEl) nameEl.innerText = char.name;
+            const mobileNameEl = document.getElementById('modal-char-name-mobile');
+            if(mobileNameEl) mobileNameEl.innerText = char.name; // FIX: Corrected variable name from mobileNameL to mobileNameEl
+
+            // ID Display
+            const idEl = document.getElementById('modal-char-id-display');
+            if(idEl) idEl.innerText = char.id.toUpperCase() + '-' + Math.floor(Math.random() * 9000 + 1000);
+
+            document.getElementById('modal-char-origin').innerText = char.origin;
+            document.getElementById('modal-char-powers').innerText = char.powers;
+            
+            // Populate Appearances Tags
+            const appearancesHTML = char.appearances.map(movieId => {
+                const movie = MOCK_CONTENT.find(m => m.id === movieId);
+                return movie 
+                    ? `<span style="padding: 0.25rem 0.5rem; background-color: #1f2937; border: 1px solid #374151; color: #9ca3af; border-radius: 0.25rem; font-size: 0.625rem; font-family: var(--font-data); text-transform: uppercase; cursor: default;">${movie.title}</span>` 
+                    : '';
+            }).join('');
+            document.getElementById('modal-char-appearances').innerHTML = appearancesHTML || '<span style="color: #6b7280; font-style: italic; font-size: 0.75rem;">No confirmed records.</span>';
+
+            // Set Filter Button Action
+            const filterBtn = document.getElementById('modal-filter-btn');
+            filterBtn.onclick = () => activateCharacterFilter(id);
+
+            // Show Modal
+            overlay.classList.add('open');
+            lucide.createIcons();
+        }
+
+        function closeCharacterModal() {
+            document.getElementById('character-modal').classList.remove('open');
+        }
+
+        function activateCharacterFilter(id) {
+            state.activeCharacterId = id;
+            closeCharacterModal();
+            setView('timeline'); // Switch back to timeline to see results
+        }
+
+        // --- NEW MOVIE MODAL LOGIC ---
+        function selectMovie(id) {
+            const movie = MOCK_CONTENT.find(m => m.id === id);
+            if (!movie) return;
+
+            const modal = document.getElementById('movie-modal');
+            const overlay = modal;
+
+            // Populate Modal
+            document.getElementById('modal-movie-img').src = movie.posterUrl || `https://placehold.co/400x600/1f2937/a5f3fc?text=${movie.title}`;
+            document.getElementById('modal-movie-title').innerText = movie.title;
+            document.getElementById('modal-movie-year').innerText = movie.releaseYear;
+            document.getElementById('modal-movie-rating').innerText = movie.rating;
+            document.getElementById('modal-movie-synopsis').innerText = movie.synopsis;
+
+            // Populate Characters
+            const charactersHTML = movie.characterIds.map(charId => {
+                const char = MOCK_CHARACTERS.find(c => c.id === charId);
+                // Fallback name if character ID not found in MOCK_CHARACTERS (e.g. minor characters)
+                const name = char ? char.name : charId; 
+                return `<span style="padding: 0.25rem 0.5rem; background-color: #1f2937; border: 1px solid #374151; color: #9ca3af; border-radius: 0.25rem; font-size: 0.625rem; font-family: var(--font-data); text-transform: uppercase; cursor: default;">${name}</span>`;
+            }).join('');
+            document.getElementById('modal-movie-characters').innerHTML = charactersHTML || '<span style="color: #6b7280; font-style: italic; font-size: 0.75rem;">Unknown Cast.</span>';
+
+            // Watch Button in Footer (reusing logic, ensuring current status)
+            const currentStatus = state.watchlist[movie.id] || 'None';
+            const statusData = currentStatus === 'None' ? statusConfig['Plan to Watch'] : statusConfig[currentStatus];
+            
+            // Get the movie footer element
+            const movieFooter = document.getElementById('modal-movie-footer');
+            
+            // Update the footer content with the watch button
+            movieFooter.innerHTML = createWatchButton(movie.id, currentStatus, statusData); 
+            
+            overlay.classList.add('open');
+            lucide.createIcons();
+        }
+
+        function closeMovieModal() {
+            document.getElementById('movie-modal').classList.remove('open');
+        }
+
+        function toggleWatchlist(id) {
+            if (!state.isLoggedIn) {
+                openAuthModal();
+                return;
+            }
+
+            const current = state.watchlist[id] || 'None';
+            let next = 'None';
+
+            // Cycle: None -> Plan to Watch -> Watching -> Watched -> None
+            if (current === 'None') {
+                next = 'Plan to Watch';
+            } else if (current === 'Plan to Watch') {
+                next = 'Watching';
+            } else if (current === 'Watching') {
+                next = 'Watched';
+            } else if (current === 'Watched') {
+                next = 'None';
+            }
+
+            if (next === 'None') delete state.watchlist[id];
+            else state.watchlist[id] = next;
+
+            // Direct DOM update logic
+            const statusData = next === 'None' ? statusConfig['Plan to Watch'] : statusConfig[next];
+            
+            // Update ALL buttons for this ID (Timeline + Modal)
+            const buttons = document.querySelectorAll(`[id="watch-btn-${id}"]`);
+            buttons.forEach(btn => {
+                const temp = document.createElement('div');
+                temp.innerHTML = createWatchButton(id, next, statusData);
+                const newBtn = temp.firstElementChild;
+                btn.replaceWith(newBtn);
+            });
+            
+            if (state.currentView === 'profile') {
+                renderProfile();
+            }
+            
+            lucide.createIcons();
+        }
+
+        // --- AUTH ---
+        function openAuthModal() {
+            document.getElementById('auth-modal').classList.add('open');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.remove('open');
+        }
+
+        function login() {
+            const btn = document.querySelector('#auth-modal button.auth-submit');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'AUTHENTICATING...';
+            
+            setTimeout(() => {
+                state.isLoggedIn = true;
+                closeAuthModal();
+                btn.innerHTML = originalText;
+                updateUI();
+            }, 800);
+        }
+
+        function logout() {
+            state.isLoggedIn = false;
+            state.watchlist = {}; // Clear on logout per requirements
+            state.activeCharacterId = null;
+            state.currentView = 'timeline';
+            updateUI();
+        }
+
+        // --- INIT ---
+        window.onload = function() {
+            initStars();
+            animateStars();
+            updateUI();
+        };
+
+    </script>
+</body>
+</html>
